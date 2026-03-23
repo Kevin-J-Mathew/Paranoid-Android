@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from the backend directory (parent of core/)
+_backend_dir = os.path.dirname(os.path.dirname(__file__))
+load_dotenv(os.path.join(_backend_dir, ".env"))
 
 class Config:
     # Groq LLM (FREE - get key at console.groq.com, no credit card needed)
