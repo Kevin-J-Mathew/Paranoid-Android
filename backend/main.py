@@ -1,9 +1,11 @@
 import asyncio
 import json
 import os
+import sys
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any
 
 from fastapi import FastAPI, HTTPException
@@ -11,12 +13,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .database import init_db, save_run, get_all_runs, get_run_by_id  # pyre-ignore[21]
-from .models.schemas import RunRequest, FeedbackRequest  # pyre-ignore[21]
-from .core.graph import get_compiled_graph  # pyre-ignore[21]
-from .core.rag import get_rag_pipeline  # pyre-ignore[21]
-from .integrations.jira_client import get_jira_stories  # pyre-ignore[21]
-from .core.config import config  # pyre-ignore[21]
+# Allow running from either repo root (uvicorn backend.main:app) or backend/ (uvicorn main:app).
+if __package__ in (None, ""):
+    project_root = Path(__file__).resolve().parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+from backend.database import init_db, save_run, get_all_runs, get_run_by_id  # pyre-ignore[21]
+from backend.models.schemas import RunRequest, FeedbackRequest  # pyre-ignore[21]
+from backend.core.graph import get_compiled_graph  # pyre-ignore[21]
+from backend.core.rag import get_rag_pipeline  # pyre-ignore[21]
+from backend.integrations.jira_client import get_jira_stories  # pyre-ignore[21]
+from backend.core.config import config  # pyre-ignore[21]
 
 # Store active run states for SSE streaming
 active_runs: Dict[str, Dict[str, Any]] = {}
