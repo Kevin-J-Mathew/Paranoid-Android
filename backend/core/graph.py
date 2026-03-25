@@ -1,13 +1,13 @@
-from typing import TypedDict, List, Dict, Any, Optional
+from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, END
 
-from ..agents.requirements_agent import run_requirements_agent
-from ..agents.test_generation_agent import run_test_generation_agent
-from ..agents.test_execution_agent import run_test_execution_agent
-from ..agents.regression_agent import run_regression_agent
-from ..agents.report_agent import run_report_agent
-from ..agents.knowledge_store_agent import run_knowledge_store_agent
-from ..core.rag import get_rag_pipeline
+from ..agents.requirements_agent import run_requirements_agent  # pyre-ignore[21]
+from ..agents.test_generation_agent import run_test_generation_agent  # pyre-ignore[21]
+from ..agents.test_execution_agent import run_test_execution_agent  # pyre-ignore[21]
+from ..agents.regression_agent import run_regression_agent  # pyre-ignore[21]
+from ..agents.report_agent import run_report_agent  # pyre-ignore[21]
+from ..agents.knowledge_store_agent import run_knowledge_store_agent  # pyre-ignore[21]
+from ..core.rag import get_rag_pipeline  # pyre-ignore[21]
 
 
 class AgentState(TypedDict):
@@ -69,7 +69,7 @@ def rag_query_node(state: AgentState) -> AgentState:
     return state
 
 
-def build_sentinel_graph() -> StateGraph:
+def build_sentinel_graph() -> Any:
     """Construct the full LangGraph agent pipeline."""
     graph = StateGraph(AgentState)
 
@@ -99,7 +99,7 @@ def build_sentinel_graph() -> StateGraph:
 _compiled_graph = None
 
 
-def get_compiled_graph():
+def get_compiled_graph() -> Any:
     global _compiled_graph
     if _compiled_graph is None:
         _compiled_graph = build_sentinel_graph()

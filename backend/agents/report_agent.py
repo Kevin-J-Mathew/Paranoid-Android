@@ -3,7 +3,7 @@ import base64
 import json
 from datetime import datetime
 from typing import Dict, Any
-from ..core.config import config
+from ..core.config import config  # pyre-ignore[21]
 
 
 def _encode_screenshot(screenshot_path: str) -> str:

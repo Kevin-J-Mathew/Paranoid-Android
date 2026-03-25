@@ -1,5 +1,5 @@
 from langchain_groq import ChatGroq
-from .config import config
+from .config import config  # pyre-ignore[21]
 
 
 def get_llm(temperature: float = 0.1) -> ChatGroq:

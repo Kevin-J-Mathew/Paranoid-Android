@@ -1,9 +1,9 @@
 import os
-from typing import List, Dict, Optional
-from ..core.config import config
+from typing import List, Dict, Optional, Any, cast
+from ..core.config import config  # pyre-ignore[21]
 
 
-def get_jira_stories(project_key: str = None, max_results: int = 20) -> List[Dict]:
+def get_jira_stories(project_key: Optional[str] = None, max_results: int = 20) -> List[Dict]:
     """
     Fetch user stories from Jira using the REST API v3.
     Falls back to mock data if Jira credentials are not configured.
@@ -16,23 +16,28 @@ def get_jira_stories(project_key: str = None, max_results: int = 20) -> List[Dic
 
     try:
         from jira import JIRA
+        server = cast(str, config.JIRA_SERVER)
+        email = cast(str, config.JIRA_EMAIL)
+        token = cast(str, config.JIRA_API_TOKEN)
         jira = JIRA(
-            server=config.JIRA_SERVER,
-            basic_auth=(config.JIRA_EMAIL, config.JIRA_API_TOKEN)
+            server=server,
+            basic_auth=(email, token)
         )
-        key = project_key or config.JIRA_PROJECT_KEY
+        key = project_key or config.JIRA_PROJECT_KEY or "DEMO"
         jql = f'project = {key} AND issuetype in ("Story", "User Story") ORDER BY created DESC'
-        issues = jira.search_issues(jql, maxResults=max_results)
+        issues = cast(List[Any], jira.search_issues(jql, maxResults=max_results))
 
         stories = []
         for issue in issues:
+            issue_obj = cast(Any, issue)
+            fields = getattr(issue_obj, "fields", None)
             stories.append({
-                "id": issue.key,
-                "title": issue.fields.summary,
-                "description": issue.fields.description or issue.fields.summary,
-                "acceptance_criteria": getattr(issue.fields, "customfield_10016", None) or "",
+                "id": getattr(issue_obj, "key", ""),
+                "title": getattr(fields, "summary", ""),
+                "description": getattr(fields, "description", None) or getattr(fields, "summary", ""),
+                "acceptance_criteria": getattr(fields, "customfield_10016", None) or "",
                 "story_type": "feature",
-                "priority": str(issue.fields.priority) if issue.fields.priority else "medium"
+                "priority": str(getattr(fields, "priority", None)) if getattr(fields, "priority", None) else "medium"
             })
         return stories
 
@@ -50,18 +55,22 @@ def get_story_by_id(story_id: str) -> Optional[Dict]:
 
     try:
         from jira import JIRA
+        server = cast(str, config.JIRA_SERVER)
+        email = cast(str, config.JIRA_EMAIL)
+        token = cast(str, config.JIRA_API_TOKEN)
         jira = JIRA(
-            server=config.JIRA_SERVER,
-            basic_auth=(config.JIRA_EMAIL, config.JIRA_API_TOKEN)
+            server=server,
+            basic_auth=(email, token)
         )
-        issue = jira.issue(story_id)
+        issue = cast(Any, jira.issue(story_id))
+        fields = getattr(issue, "fields", None)
         return {
-            "id": issue.key,
-            "title": issue.fields.summary,
-            "description": issue.fields.description or issue.fields.summary,
-            "acceptance_criteria": getattr(issue.fields, "customfield_10016", None) or "",
+            "id": getattr(issue, "key", ""),
+            "title": getattr(fields, "summary", ""),
+            "description": getattr(fields, "description", None) or getattr(fields, "summary", ""),
+            "acceptance_criteria": getattr(fields, "customfield_10016", None) or "",
             "story_type": "feature",
-            "priority": str(issue.fields.priority) if issue.fields.priority else "medium"
+            "priority": str(getattr(fields, "priority", None)) if getattr(fields, "priority", None) else "medium"
         }
     except Exception as e:
         print(f"[Jira Client] Failed to fetch story {story_id}: {e}")

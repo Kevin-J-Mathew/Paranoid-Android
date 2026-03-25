@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Optional
 import json
 import uuid
-from .config import config
+from .config import config  # pyre-ignore[21]
 
 # Load embedding model once (local, free, no API needed)
 _embedding_model: Optional[SentenceTransformer] = None

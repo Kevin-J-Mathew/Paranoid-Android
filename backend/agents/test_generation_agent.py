@@ -3,8 +3,8 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage, SystemMessage
-from ..core.llm import get_llm
-from ..core.config import config
+from ..core.llm import get_llm  # pyre-ignore[21]
+from ..core.config import config  # pyre-ignore[21]
 
 
 GENERATION_SYSTEM_PROMPT = """You are an expert Playwright test engineer. Generate production-quality Python Playwright tests.
@@ -51,6 +51,24 @@ For the TodoMVC app at https://demo.playwright.dev/todomvc:
 - Clear completed button: page.locator(".clear-completed")
 - Todo count: page.locator(".todo-count")
 - Edit: double-click on label, then edit the .edit input"""
+
+
+def _message_content_to_text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "\n".join(parts)
+
+    return str(content)
 
 
 def run_test_generation_agent(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,7 +143,7 @@ Return ONLY the Python code, no markdown backticks, no explanation.""")
         ]
 
         response = llm.invoke(messages)
-        test_code = response.content.strip()
+        test_code = _message_content_to_text(response.content).strip()
 
         # Clean up any markdown if model adds it despite instructions
         if "```python" in test_code:

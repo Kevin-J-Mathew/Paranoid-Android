@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime
 from typing import Dict, Any
-from ..core.config import config
+from ..core.config import config  # pyre-ignore[21]
 
 
 def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any
-from ..core.rag import get_rag_pipeline
+from ..core.rag import get_rag_pipeline  # pyre-ignore[21]
 
 
 def run_knowledge_store_agent(state: Dict[str, Any]) -> Dict[str, Any]:

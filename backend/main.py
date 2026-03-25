@@ -11,12 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .database import init_db, save_run, get_all_runs, get_run_by_id
-from .models.schemas import RunRequest, FeedbackRequest
-from .core.graph import get_compiled_graph
-from .core.rag import get_rag_pipeline
-from .integrations.jira_client import get_jira_stories
-from .core.config import config
+from .database import init_db, save_run, get_all_runs, get_run_by_id  # pyre-ignore[21]
+from .models.schemas import RunRequest, FeedbackRequest  # pyre-ignore[21]
+from .core.graph import get_compiled_graph  # pyre-ignore[21]
+from .core.rag import get_rag_pipeline  # pyre-ignore[21]
+from .integrations.jira_client import get_jira_stories  # pyre-ignore[21]
+from .core.config import config  # pyre-ignore[21]
 
 # Store active run states for SSE streaming
 active_runs: Dict[str, Dict[str, Any]] = {}

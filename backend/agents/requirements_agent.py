@@ -2,8 +2,8 @@ import json
 from datetime import datetime
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage, SystemMessage
-from ..core.llm import get_llm
-from ..core.config import config
+from ..core.llm import get_llm  # pyre-ignore[21]
+from ..core.config import config  # pyre-ignore[21]
 
 
 REQUIREMENTS_SYSTEM_PROMPT = """You are a senior QA architect. Your task is to analyze a user story and extract
@@ -27,6 +27,24 @@ The JSON structure must be:
 }
 
 Always generate at least 3 testable scenarios. Include at least 1 edge case scenario."""
+
+
+def _message_content_to_text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "\n".join(parts)
+
+    return str(content)
 
 
 def run_requirements_agent(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -61,7 +79,7 @@ Return only the JSON object as specified.""")
     ]
 
     response = llm.invoke(messages)
-    raw = response.content.strip()
+    raw = _message_content_to_text(response.content).strip()
 
     # Safely parse JSON even if model adds backticks
     if "```json" in raw:

@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 MOCK_JIRA_STORIES = [
     {
@@ -136,7 +136,7 @@ def get_mock_stories() -> List[Dict]:
     return MOCK_JIRA_STORIES
 
 
-def get_story_by_id(story_id: str) -> Dict:
+def get_story_by_id(story_id: str) -> Optional[Dict]:
     for story in MOCK_JIRA_STORIES:
         if story["id"] == story_id:
             return story

@@ -2,8 +2,8 @@ import json
 from datetime import datetime
 from typing import Dict, Any, List
 from langchain_core.messages import HumanMessage, SystemMessage
-from ..core.llm import get_llm
-from ..core.rag import get_rag_pipeline
+from ..core.llm import get_llm  # pyre-ignore[21]
+from ..core.rag import get_rag_pipeline  # pyre-ignore[21]
 
 
 REGRESSION_SYSTEM_PROMPT = """You are a senior QA regression analyst. Analyze test results and identify regressions.
@@ -26,8 +26,6 @@ Given test results and historical baselines, return ONLY a valid JSON object:
   ],
   "recommendations": ["recommendation 1", "recommendation 2"]
 }"""
-
-
 def run_regression_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Regression Agent: Compares current run results against ChromaDB baselines.
@@ -103,7 +101,21 @@ Return only the JSON object.""")
     ]
 
     response = llm.invoke(messages)
-    raw = response.content.strip()
+    content = response.content
+    if isinstance(content, str):
+        raw = content.strip()
+    elif isinstance(content, list):
+        parts: List[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        raw = "\n".join(parts).strip()
+    else:
+        raw = str(content).strip()
 
     if "```json" in raw:
         raw = raw.split("```json")[1].split("```")[0].strip()
