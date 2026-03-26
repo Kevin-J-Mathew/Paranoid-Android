@@ -1,97 +1,100 @@
-import React, { useState, useEffect } from 'react'
-import { api } from '../api.js'
+import React, { useState } from 'react'
+import { api } from '../api'
+
+const SearchIcon = () => (
+   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+)
 
 export default function KnowledgeBasePanel() {
-  const [stats, setStats] = useState(null)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
-  useEffect(() => {
-    api.getKnowledgeStats().then(r => setStats(r.data)).catch(console.error)
-  }, [])
-
-  const handleSearch = async () => {
+  const handleSearch = async (e) => {
+    e.preventDefault()
     if (!query.trim()) return
-    setSearching(true)
+
+    setLoading(true)
+    setHasSearched(true)
     try {
-      const r = await api.querySimilarTests(query)
-      setResults(r.data.results || [])
-    } catch (e) {
-      console.error(e)
+      const response = await api.querySimilarTests(query, 5)
+      // Map RAG response to standard format
+      const mapped = (response.data.results || []).map((item, idx) => ({
+        id: idx,
+        title: item.metadata?.title || item.metadata?.test_name || 'Generic Document',
+        text: item.document,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' UTC',
+        score: (1 - (item.distance || 0)).toFixed(2)
+      }))
+      setResults(mapped)
+    } catch (err) {
+      console.error('Failed to query knowledge store:', err)
+      setResults([])
     } finally {
-      setSearching(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: 'Test Cases', value: stats.test_cases, icon: '🧪', color: 'blue' },
-            { label: 'Bug Reports', value: stats.bug_reports, icon: '🐛', color: 'red' },
-            { label: 'Baselines', value: stats.run_baselines, icon: '📏', color: 'green' },
-          ].map(item => (
-            <div key={item.label} className="bg-slate-800 rounded-xl border border-slate-700 p-5 text-center">
-              <div className="text-3xl mb-2">{item.icon}</div>
-              <div className="text-3xl font-bold text-white">{item.value}</div>
-              <div className="text-slate-400 text-sm mt-1">{item.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="flex flex-col h-full">
+      <form onSubmit={handleSearch} className="relative mb-8">
+        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="QUERY_KNOWLEDGE_STORE..."
+          className="w-full input-dark py-4 pl-[42px] pr-4 rounded-lg border border-border-light text-sm"
+        />
+        <button
+          type="submit"
+          disabled={loading || !query.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 btn-fuchsia px-4 py-1.5 rounded text-[10px]"
+        >
+          {loading ? 'SEARCHING...' : 'EXECUTE'}
+        </button>
+      </form>
 
-      {/* Search */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-        <h3 className="text-white font-bold mb-3">🔍 Semantic Search</h3>
-        <p className="text-slate-400 text-sm mb-3">
-          Query the knowledge base with natural language to find similar past tests.
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            placeholder="e.g. 'user adds a todo item' or 'filter by completion'"
-            className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 placeholder-slate-600"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={searching}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
-          >
-            {searching ? '...' : 'Search'}
-          </button>
-        </div>
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border-light">
+        <h3 className="text-mono-caps text-xs font-bold tracking-widest text-text-primary">
+          INTELLIGENCE_MATCHES
+        </h3>
+        <span className="text-text-secondary text-[10px] font-mono tracking-widest">
+          {results.length} VECTORS_FOUND
+        </span>
+      </div>
 
-        {results.length > 0 && (
-          <div className="mt-4 space-y-3">
-            <p className="text-slate-400 text-xs font-medium">{results.length} similar tests found:</p>
-            {results.map((r, idx) => (
-              <div key={idx} className="bg-slate-900 rounded-lg p-3 border border-slate-700">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-slate-300 text-sm font-medium">
-                    {r.metadata?.test_name || 'Unknown test'}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded font-bold uppercase ${
-                      r.metadata?.outcome === 'passed' ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'
-                    }`}>
-                      {r.metadata?.outcome || 'unknown'}
-                    </span>
-                    <span className="text-slate-500 text-xs">
-                      sim: {r.distance ? (1 - r.distance).toFixed(2) : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-slate-500 text-xs">{r.document?.slice(0, 150)}...</p>
-              </div>
-            ))}
+      <div className="flex-1 overflow-y-auto">
+        {!hasSearched && (
+           <div className="h-full mt-24 text-text-tertiary text-xs text-mono-caps text-center flex flex-col items-center justify-center">
+             <SearchIcon />
+             <span className="mt-4">ENTER_QUERY_TO_SEARCH_MEMORY</span>
+           </div>
+        )}
+
+        {loading && hasSearched && (
+          <div className="flex justify-center items-center py-10">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
           </div>
         )}
+
+        {!loading && hasSearched && results.map(res => (
+          <div key={res.id} className="bg-surface-base border border-border-light rounded-lg p-5 mb-4 hover:border-accent-cyan/40 transition-colors">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-text-primary font-bold text-sm tracking-wide">{res.title}</h4>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary text-[10px] font-mono">{res.timestamp}</span>
+                <span className="bg-white/10 text-text-primary px-2 py-0.5 rounded text-[9px] font-mono border border-white/20">
+                  RELEVANCE:{res.score}
+                </span>
+              </div>
+            </div>
+            <p className="text-text-secondary text-xs leading-relaxed font-mono">
+              {'>'} {res.text}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   )

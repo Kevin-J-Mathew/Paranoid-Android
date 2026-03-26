@@ -49,9 +49,9 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     regression_risk = regression_analysis.get("overall_regression_risk", "unknown")
     risk_color_map = {
         "critical": "#ef4444",
-        "high": "#f97316",
+        "high": "#f59e0b",
         "medium": "#eab308",
-        "low": "#22c55e",
+        "low": "#22d3ee",
         "none": "#22c55e",
         "unknown": "#6b7280"
     }
@@ -63,7 +63,7 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         status_color = {
             "passed": "#22c55e",
             "failed": "#ef4444",
-            "error": "#f97316",
+            "error": "#f59e0b",
             "skipped": "#6b7280"
         }.get(r["status"], "#6b7280")
 
@@ -79,22 +79,22 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         )
         regression_badge = ""
         if reg_flag and reg_flag.get("is_regression"):
-            regression_badge = f'<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:8px;">REGRESSION</span>'
+            regression_badge = f'<span style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:4px;font-size:10px;font-family:\'JetBrains Mono\', monospace;margin-left:8px;box-shadow: 0 0 10px rgba(239,68,68,0.2);">CRITICAL_REGRESSION</span>'
 
         error_html = ""
         if r.get("error_message"):
-            error_html = f'<pre style="background:#1e1e1e;color:#f8f8f2;padding:12px;border-radius:4px;font-size:12px;overflow-x:auto;margin-top:8px;">{r["error_message"][:1000]}</pre>'
+            error_html = f'<pre style="background:rgba(239,68,68,0.05);color:#fca5a5;padding:12px;border-left:2px solid #ef4444;border-radius:0 4px 4px 0;font-size:11px;font-family:\'JetBrains Mono\', monospace;overflow-x:auto;margin-top:12px;box-shadow:inset 0 0 10px rgba(239,68,68,0.05);">{r["error_message"][:1000]}</pre>'
 
         result_rows += f"""
-        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="background:#111111;border:1px solid #27272a;border-radius:8px;padding:16px;margin-bottom:16px;transition:border-color 0.2s;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <span style="font-weight:600;font-size:15px;">{r["test_name"]}</span>
+              <span style="font-weight:600;font-size:14px;color:#f4f4f5;font-family:\'JetBrains Mono\', monospace;">{r["test_name"]}</span>
               {regression_badge}
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-              <span style="color:#6b7280;font-size:13px;">{r["duration_ms"]}ms</span>
-              <span style="background:{status_color};color:white;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;text-transform:uppercase;">{r["status"]}</span>
+              <span style="color:#a1a1aa;font-size:11px;font-family:\'JetBrains Mono\', monospace;">LATENCY: <span style="color:#22d3ee">{r["duration_ms"]}ms</span></span>
+              <span style="color:{status_color};border:1px solid {status_color}33;background:{status_color}1a;padding:4px 8px;border-radius:4px;font-size:10px;font-family:\'JetBrains Mono\', monospace;font-weight:700;text-transform:uppercase;box-shadow:0 0 8px {status_color}33;">{r["status"]}</span>
             </div>
           </div>
           {error_html}
@@ -106,26 +106,29 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     for flag in regression_analysis.get("flags", []):
         if flag.get("is_regression"):
             regression_rows += f"""
-            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:8px;">
-              <strong>{flag["test_name"]}</strong>: {flag["explanation"]}
-              <br><span style="color:#6b7280;font-size:12px;">Severity: {flag.get("severity","unknown").upper()}</span>
+            <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:12px;margin-bottom:8px;">
+              <strong style="color:#f87171;font-family:\'JetBrains Mono\', monospace;font-size:12px;">{flag["test_name"]}</strong>
+              <span style="color:#e4e4e7;margin-left:8px;font-size:13px;">{flag["explanation"]}</span>
+              <div style="color:#a1a1aa;font-size:10px;font-family:\'JetBrains Mono\', monospace;margin-top:6px;">SEVERITY: <span style="color:#ef4444">{flag.get("severity","unknown").upper()}</span></div>
             </div>"""
 
     if not regression_rows:
-        regression_rows = '<p style="color:#22c55e;">✓ No regressions detected in this run.</p>'
+        regression_rows = '<p style="color:#22c55e;font-family:\'JetBrains Mono\', monospace;font-size:12px;">> NO_REGRESSIONS_DETECTED</p>'
 
     # Build agent steps section
     steps_html = ""
     for s in agent_steps:
-        icon = "✓" if s["status"] == "completed" else ("✗" if s["status"] == "failed" else "⟳")
-        color = "#22c55e" if s["status"] == "completed" else ("#ef4444" if s["status"] == "failed" else "#3b82f6")
+        icon = "●"
+        color = "#22c55e" if s["status"] == "completed" else ("#ef4444" if s["status"] == "failed" else "#22d3ee")
         steps_html += f"""
-        <div style="display:flex;gap:12px;margin-bottom:8px;align-items:flex-start;">
-          <span style="color:{color};font-size:16px;min-width:20px;">{icon}</span>
+        <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;background:#111111;padding:12px;border:1px solid #27272a;border-radius:6px;">
+          <span style="color:{color};font-size:10px;min-width:14px;margin-top:2px;text-shadow:0 0 8px {color};">{icon}</span>
           <div>
-            <span style="font-weight:600;color:{color};">{s["agent_name"]}</span>
-            <span style="color:#6b7280;font-size:12px;margin-left:8px;">{s["timestamp"]}</span>
-            <p style="color:#374151;margin:2px 0 0 0;font-size:14px;">{s["message"]}</p>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+              <span style="font-weight:700;color:{color};font-family:\'JetBrains Mono\', monospace;font-size:12px;">{s["agent_name"].upper()}</span>
+              <span style="color:#52525b;font-size:10px;font-family:\'JetBrains Mono\', monospace;">{s["timestamp"]}</span>
+            </div>
+            <p style="color:#a1a1aa;margin:0;font-size:13px;">{s["message"]}</p>
           </div>
         </div>"""
 
@@ -141,71 +144,119 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sentinel-Agent Test Report — {story_id}</title>
+<title>Sentinel-Agent Report — {story_id}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #111827; }}
-  .header {{ background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 32px 40px; }}
-  .header h1 {{ font-size: 28px; font-weight: 700; margin-bottom: 8px; }}
-  .header p {{ color: #94a3b8; font-size: 14px; }}
-  .container {{ max-width: 1100px; margin: 0 auto; padding: 32px 24px; }}
-  .metrics-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }}
-  .metric-card {{ background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-  .metric-card .value {{ font-size: 36px; font-weight: 800; }}
-  .metric-card .label {{ font-size: 13px; color: #6b7280; margin-top: 4px; }}
-  .section {{ background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-  .section h2 {{ font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }}
-  .story-box {{ background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; font-size: 14px; line-height: 1.6; }}
+  body {{ 
+    font-family: 'Inter', sans-serif; 
+    background-color: #080808; 
+    color: #e4e4e7; 
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }}
+  .app-wrapper {{ padding: 24px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }}
+  .header {{ 
+    background: #111111; 
+    border: 1px solid #27272a; 
+    border-radius: 12px; 
+    padding: 32px 40px; 
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }}
+  .header::before {{
+    content: ''; position: absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+    opacity: 0.5;
+  }}
+  .header h1 {{ font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: white; display:flex; align-items:center; gap:12px; margin-bottom: 12px; }}
+  .header h1 span.accent {{ color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }}
+  .header p {{ color: #a1a1aa; font-family: 'JetBrains Mono', monospace; font-size: 11px; }}
+  
+  .metrics-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }}
+  .metric-card {{ 
+    background: #111111; 
+    border: 1px solid #27272a; 
+    border-radius: 8px; 
+    padding: 24px; 
+    text-align: right; 
+    position: relative;
+  }}
+  .metric-card .value {{ font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 700; line-height: 1; margin-bottom: 8px; }}
+  .metric-card .label {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; }}
+  
+  .section {{ 
+    background: #111111; 
+    border: 1px solid #27272a; 
+    border-radius: 12px; 
+    padding: 32px; 
+    margin-bottom: 24px; 
+  }}
+  .section h2 {{ 
+    font-family: 'JetBrains Mono', monospace; 
+    font-size: 12px; 
+    font-weight: 700; 
+    margin-bottom: 24px; 
+    color: #22d3ee; 
+    border-bottom: 1px solid #27272a; 
+    padding-bottom: 12px; 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }}
+  .story-box {{ background: #080808; border: 1px solid #27272a; padding: 20px; border-radius: 6px; font-size: 14px; line-height: 1.6; color: #d4d4d8; }}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>🤖 Sentinel-Agent Test Report</h1>
-  <p>Run ID: {run_id} | Generated: {timestamp} | Story: {story_id}</p>
-</div>
-<div class="container">
+<div class="app-wrapper">
+  <div class="header">
+    <h1><span class="accent">PARANOID ANDROID</span> / TEST_REPORT</h1>
+    <p>RUN_ID: {run_id} &nbsp;|&nbsp; GENERATED: {timestamp} &nbsp;|&nbsp; SOURCE: {story_id}</p>
+  </div>
+  
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="value" style="color:#3b82f6;">{total}</div>
-      <div class="label">Total Tests</div>
+      <div class="value" style="color:#e4e4e7;">{total}</div>
+      <div class="label">Total Cases</div>
     </div>
     <div class="metric-card">
-      <div class="value" style="color:#22c55e;">{passed}</div>
+      <div class="value" style="color:#4ade80; text-shadow:0 0 15px rgba(74,222,128,0.4);">{passed}</div>
       <div class="label">Passed</div>
     </div>
     <div class="metric-card">
-      <div class="value" style="color:#ef4444;">{failed + errors}</div>
+      <div class="value" style="color:#f87171; text-shadow:0 0 15px rgba(248,113,113,0.4);">{failed + errors}</div>
       <div class="label">Failed / Error</div>
     </div>
     <div class="metric-card">
-      <div class="value" style="color:{risk_color};">{regression_risk.upper()}</div>
+      <div class="value" style="color:{risk_color}; text-shadow:0 0 15px {risk_color}66; font-size: 32px; padding-top:10px;">{regression_risk.replace('_', ' ').upper()}</div>
       <div class="label">Regression Risk</div>
     </div>
   </div>
 
   <div class="section">
-    <h2>📋 User Story</h2>
+    <h2>> STORY_PAYLOAD</h2>
     <div class="story-box">{story_text}</div>
-    <p style="margin-top:12px;color:#6b7280;font-size:13px;">
-      Summary: {parsed_requirements.get("story_summary", "N/A")} |
-      Risk Areas: {", ".join(parsed_requirements.get("risk_areas", []))}
+    <p style="margin-top:16px;color:#a1a1aa;font-size:11px;font-family:'JetBrains Mono', monospace;">
+      <span style="color:#22d3ee">SUMMARY:</span> {parsed_requirements.get("story_summary", "N/A")}<br><br>
+      <span style="color:#22d3ee">RISK_AREAS:</span> {", ".join(parsed_requirements.get("risk_areas", []))}
     </p>
   </div>
 
   <div class="section">
-    <h2>🧪 Test Results ({pass_rate}% Pass Rate)</h2>
+    <h2>> EXECUTION_LOGS ({pass_rate}% SUCCESS_RATE)</h2>
     {result_rows}
   </div>
 
   <div class="section">
-    <h2>🔍 Regression Analysis</h2>
-    <p style="margin-bottom:12px;color:#374151;">{regression_analysis.get("regression_summary", "")}</p>
+    <h2>> REGRESSION_ANALYSIS</h2>
+    <p style="margin-bottom:16px;color:#d4d4d8;font-size:14px;line-height:1.5;">{regression_analysis.get("regression_summary", "")}</p>
     {regression_rows}
-    {"<h3 style='margin-top:16px;font-size:15px;font-weight:600;'>Recommendations:</h3><ul style='margin-top:8px;padding-left:20px;color:#374151;font-size:14px;'>" + recommendations_html + "</ul>" if recommendations_html else ""}
+    {"<h3 style='margin-top:24px;margin-bottom:8px;font-size:11px;font-family:\"JetBrains Mono\", monospace;color:#22d3ee;letter-spacing:1px;'>RECOMMENDATIONS:</h3><ul style='padding-left:16px;color:#a1a1aa;font-size:13px;line-height:1.6;'>" + recommendations_html + "</ul>" if recommendations_html else ""}
   </div>
 
-  <div class="section">
-    <h2>🤖 Agent Execution Timeline</h2>
+  <div class="section" style="margin-bottom:40px;">
+    <h2>> SYSTEM_TRACE</h2>
     {steps_html}
   </div>
 </div>

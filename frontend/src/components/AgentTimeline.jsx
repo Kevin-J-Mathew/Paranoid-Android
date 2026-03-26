@@ -1,32 +1,46 @@
 import React from 'react'
 
-const AGENT_ICONS = {
-  'Requirements Agent': '📋',
-  'RAG Knowledge Agent': '🧠',
-  'Test Generation Agent': '✏️',
-  'Test Execution Agent': '▶️',
-  'Regression Detection Agent': '🔍',
-  'Report Agent': '📊',
-  'Knowledge Store Agent': '💾',
+const ClockIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-4 text-text-tertiary"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+)
+
+/* SVG Icons mapped to terminal style */
+const AgentIcons = {
+  'Requirements Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+  ),
+  'RAG Knowledge Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+  ),
+  'Test Generation Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  ),
+  'Test Execution Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+  ),
+  'Regression Detection Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  ),
+  'Report Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+  ),
+  'Knowledge Store Agent': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+  ),
 }
 
-const STATUS_STYLES = {
-  completed: 'border-l-green-500 bg-green-500/5',
-  running: 'border-l-blue-500 bg-blue-500/5 animate-pulse',
-  failed: 'border-l-red-500 bg-red-500/5',
-}
-
-const STATUS_DOTS = {
-  completed: 'bg-green-500',
-  running: 'bg-blue-500 animate-ping',
-  failed: 'bg-red-500',
+const STATUS_TINT = {
+  completed: 'text-accent-cyan',
+  running: 'text-accent-fuchsia animate-pulse',
+  failed: 'text-accent-red',
 }
 
 export default function AgentTimeline({ steps = [], isRunning = false }) {
   if (steps.length === 0 && !isRunning) {
     return (
-      <div className="text-slate-500 text-sm text-center py-8">
-        Agent timeline will appear here when you start a run.
+      <div className="h-full mt-24 text-text-tertiary text-xs text-mono-caps text-center flex flex-col items-center justify-center">
+        <ClockIcon />
+        <span>WAITING_FOR_PROCESS_START...</span>
       </div>
     )
   }
@@ -36,51 +50,58 @@ export default function AgentTimeline({ steps = [], isRunning = false }) {
       {steps.map((step, idx) => (
         <div
           key={idx}
-          className={`border-l-4 pl-4 pr-4 py-3 rounded-r-lg ${STATUS_STYLES[step.status] || 'border-l-slate-600 bg-slate-800/30'}`}
+          className="bg-surface-card border border-border-light rounded-lg p-4 flex items-start gap-4 animate-slide-up"
+          style={{ animationDelay: `${idx * 50}ms` }}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">{AGENT_ICONS[step.agent_name] || '🤖'}</span>
-            <span className="text-white font-semibold text-sm">{step.agent_name}</span>
-            <div className={`w-2 h-2 rounded-full ml-auto ${STATUS_DOTS[step.status] || 'bg-slate-500'}`} />
+          {/* Left Icon Box (Mimicking screenshot recommendation icon) */}
+          <div className="w-8 h-8 rounded-full bg-surface-base border border-border-light flex items-center justify-center shrink-0">
+            <span className={STATUS_TINT[step.status] || 'text-text-secondary'}>
+              {AgentIcons[step.agent_name] || (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/></svg>
+              )}
+            </span>
           </div>
-          <p className="text-slate-300 text-sm">{step.message}</p>
-          {step.timestamp && (
-            <p className="text-slate-500 text-xs mt-1">
-              {new Date(step.timestamp).toLocaleTimeString()}
-            </p>
-          )}
-          {step.data && step.status === 'completed' && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {step.data.test_count !== undefined && (
-                <span className="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded">
-                  {step.data.test_count} tests generated
-                </span>
-              )}
-              {step.data.passed !== undefined && (
-                <span className="bg-green-900/50 text-green-300 text-xs px-2 py-0.5 rounded">
-                  {step.data.passed}/{step.data.total} passed
-                </span>
-              )}
-              {step.data.overall_regression_risk && (
-                <span className={`text-xs px-2 py-0.5 rounded font-bold uppercase ${
-                  step.data.overall_regression_risk === 'none' || step.data.overall_regression_risk === 'low'
-                    ? 'bg-green-900/50 text-green-300'
-                    : step.data.overall_regression_risk === 'critical'
-                    ? 'bg-red-900/50 text-red-300'
-                    : 'bg-yellow-900/50 text-yellow-300'
-                }`}>
-                  {step.data.overall_regression_risk} risk
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-text-primary text-sm tracking-wide">{step.agent_name}</span>
+              {step.timestamp && (
+                <span className="text-text-secondary opacity-60 text-[10px] font-mono tracking-wider">
+                  {new Date(step.timestamp).toLocaleTimeString()}
                 </span>
               )}
             </div>
-          )}
+            
+            <p className="text-text-secondary text-xs leading-[1.6]">{step.message}</p>
+
+            {step.data && step.status === 'completed' && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {step.data.test_count !== undefined && (
+                  <span className="bg-surface-base border border-border-light text-text-secondary font-mono text-[9px] px-2 py-0.5 rounded uppercase">
+                    {step.data.test_count}_TESTS_GEN
+                  </span>
+                )}
+                {step.data.passed !== undefined && (
+                  <span className="bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan font-mono text-[9px] px-2 py-0.5 rounded uppercase font-bold">
+                    PASS_RATE: {step.data.passed}/{step.data.total}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       ))}
+      
       {isRunning && (
-        <div className="border-l-4 border-l-slate-600 pl-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-slate-400 text-sm">Agents working...</span>
+        <div className="bg-surface-card border border-border-light border-dashed rounded-lg p-4 flex items-center gap-4 animate-pulse">
+           <div className="w-8 h-8 rounded-full bg-surface-base border border-accent-cyan flex items-center justify-center shrink-0">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2" className="animate-spin">
+               <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+             </svg>
+          </div>
+          <div className="flex-1">
+            <span className="font-bold text-accent-cyan text-sm tracking-wide">PROCESS_ACTIVE</span>
+            <p className="text-text-secondary text-xs mt-0.5">Asynchronous orchestration in progress...</p>
           </div>
         </div>
       )}
