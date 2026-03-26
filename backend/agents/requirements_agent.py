@@ -55,6 +55,10 @@ def run_requirements_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     story_text = state["story_text"]
     story_id = state["story_id"]
 
+    print(f"\n{'='*60}")
+    print(f"[Requirements Agent] STARTED — Story: {story_id}")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "Requirements Agent",
         "status": "running",
@@ -64,6 +68,7 @@ def run_requirements_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     state["agent_steps"].append(step)
     state["current_step"] = "requirements_agent"
 
+    print(f"[Requirements Agent] Calling Groq LLM...")
     llm = get_llm(temperature=0.1)
     messages = [
         SystemMessage(content=REQUIREMENTS_SYSTEM_PROMPT),
@@ -89,7 +94,9 @@ Return only the JSON object as specified.""")
 
     try:
         parsed = json.loads(raw)
+        print(f"[Requirements Agent] Parsed {len(parsed.get('testable_scenarios', []))} scenarios")
     except json.JSONDecodeError:
+        print(f"[Requirements Agent] WARNING: JSON parse failed, using fallback")
         # Fallback: create minimal structure
         parsed = {
             "story_summary": story_text[:100],
@@ -114,4 +121,5 @@ Return only the JSON object as specified.""")
         f"Risk areas: {', '.join(parsed.get('risk_areas', []))}"
     )
     state["agent_steps"][-1]["data"] = parsed
+    print(f"[Requirements Agent] COMPLETED ✓")
     return state

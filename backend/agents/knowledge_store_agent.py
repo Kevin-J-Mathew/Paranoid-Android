@@ -14,6 +14,10 @@ def run_knowledge_store_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     generated_tests = state["generated_tests"]
     regression_analysis = state["regression_analysis"]
 
+    print(f"\n{'='*60}")
+    print(f"[Knowledge Store Agent] STARTED — Storing {len(execution_results)} results")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "Knowledge Store Agent",
         "status": "running",
@@ -72,4 +76,6 @@ def run_knowledge_store_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         f"{stats['bug_reports']} bugs, {stats['run_baselines']} baselines."
     )
     state["agent_steps"][-1]["data"] = stats
+    print(f"[Knowledge Store Agent] Stored {stored_count} results. DB: {stats['test_cases']} tests, {stats['bug_reports']} bugs")
+    print(f"[Knowledge Store Agent] COMPLETED ✓")
     return state

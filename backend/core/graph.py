@@ -34,6 +34,10 @@ def rag_query_node(state: AgentState) -> AgentState:
     """Standalone RAG query node between requirements and test generation."""
     from datetime import datetime
 
+    print(f"\n{'='*60}")
+    print(f"[RAG Knowledge Agent] STARTED — Querying knowledge base")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "RAG Knowledge Agent",
         "status": "running",
@@ -66,6 +70,8 @@ def rag_query_node(state: AgentState) -> AgentState:
         "similar_bugs_count": len(similar_bugs),
         "knowledge_stats": stats
     }
+    print(f"[RAG Knowledge Agent] Found {len(similar_tests)} similar tests, {len(similar_bugs)} bugs")
+    print(f"[RAG Knowledge Agent] COMPLETED ✓")
     return state
 
 

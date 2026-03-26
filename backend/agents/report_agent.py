@@ -27,6 +27,10 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     agent_steps = state["agent_steps"]
     run_id = state.get("run_id", story_id)
 
+    print(f"\n{'='*60}")
+    print(f"[Report Agent] STARTED — Generating HTML report")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "Report Agent",
         "status": "running",
@@ -211,8 +215,10 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     # Save report to disk
     report_filename = f"report_{run_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.html"
     report_path = os.path.join(config.REPORTS_DIR, report_filename)
-    with open(report_path, "w") as f:
+    print(f"[Report Agent] Writing report to: {report_filename}")
+    with open(report_path, "w", encoding="utf-8") as f:
         f.write(html_report)
+    print(f"[Report Agent] Report written: {len(html_report)} bytes")
 
     state["report_html"] = html_report
     state["report_path"] = report_path
@@ -224,4 +230,5 @@ def run_report_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         "pass_rate": pass_rate,
         "total_tests": total
     }
+    print(f"[Report Agent] COMPLETED ✓")
     return state

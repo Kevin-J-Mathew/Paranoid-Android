@@ -50,7 +50,13 @@ For the TodoMVC app at https://demo.playwright.dev/todomvc:
 - Filter links: page.locator(".filters a") 
 - Clear completed button: page.locator(".clear-completed")
 - Todo count: page.locator(".todo-count")
-- Edit: double-click on label, then edit the .edit input"""
+- Edit: double-click on label, then edit the .edit input
+
+CRITICAL PLAYWRIGHT RULES:
+1. When the list is empty (0 items), the `.todo-count`, `.filters`, and `.clear-completed` elements DO NOT EXIST in the DOM. Do NOT try to read their text before adding an item, or Playwright will timeout and fail!
+2. Use `.text_content()` instead of `.text` to read text.
+3. Use `expect(locator).to_have_text(...)` or `expect(locator).to_be_visible()` instead of loose assertions.
+4. Don't use `assert` heavily, rely on `expect()`."""
 
 
 def _message_content_to_text(content: Any) -> str:
@@ -79,6 +85,10 @@ def run_test_generation_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     rag_context = state["rag_context"]
     story_text = state["story_text"]
     story_id = state["story_id"]
+
+    print(f"\n{'='*60}")
+    print(f"[Test Generation Agent] STARTED — {len(requirements.get('testable_scenarios', []))} scenarios")
+    print(f"{'='*60}")
 
     step = {
         "agent_name": "Test Generation Agent",
@@ -120,8 +130,9 @@ def run_test_generation_agent(state: Dict[str, Any]) -> Dict[str, Any]:
             "test_type": "edge_case"
         })
 
-    for scenario in scenarios:
+    for i, scenario in enumerate(scenarios, 1):
         scenario_name = scenario["name"].replace(" ", "_").replace("-", "_").lower()
+        print(f"[Test Generation Agent] Generating test {i}/{len(scenarios)}: {scenario_name}...")
 
         messages = [
             SystemMessage(content=GENERATION_SYSTEM_PROMPT),
@@ -144,6 +155,7 @@ Return ONLY the Python code, no markdown backticks, no explanation.""")
 
         response = llm.invoke(messages)
         test_code = _message_content_to_text(response.content).strip()
+        print(f"[Test Generation Agent]   -> Generated {len(test_code)} chars of code")
 
         # Clean up any markdown if model adds it despite instructions
         if "```python" in test_code:
@@ -159,17 +171,26 @@ Return ONLY the Python code, no markdown backticks, no explanation.""")
         })
 
     # Write test files to disk
+    print(f"[Test Generation Agent] Writing {len(generated_tests)} test files to disk...")
     written_files = []
     for test in generated_tests:
         file_path = os.path.join(config.TESTS_OUTPUT_DIR, test["file_name"])
         with open(file_path, "w") as f:
-            # Ensure proper imports at top of file
+            # Ensure proper imports and constants at top of file
             final_code = test["test_code"]
+            headers = []
             if "import pytest" not in final_code:
-                final_code = "import pytest\nfrom playwright.sync_api import sync_playwright, expect\nimport os\n\n" + final_code
+                headers.append("import pytest\nfrom playwright.sync_api import sync_playwright, expect\nimport os")
+            if "TARGET_URL =" not in final_code and "TARGET_URL=" not in final_code:
+                headers.append(f'\nTARGET_URL = "{config.TARGET_APP_URL}"\nSCREENSHOTS_DIR = os.path.join(os.path.dirname(__file__), "..", "screenshots")\nos.makedirs(SCREENSHOTS_DIR, exist_ok=True)')
+            
+            if headers:
+                final_code = "\n".join(headers) + "\n\n" + final_code
+                
             f.write(final_code)
         test["file_path"] = file_path
         written_files.append(file_path)
+        print(f"[Test Generation Agent]   -> Wrote: {test['file_name']}")
 
     state["generated_tests"] = generated_tests
     state["agent_steps"][-1]["status"] = "completed"
@@ -180,4 +201,5 @@ Return ONLY the Python code, no markdown backticks, no explanation.""")
         "test_count": len(generated_tests),
         "test_names": [t["scenario_name"] for t in generated_tests]
     }
+    print(f"[Test Generation Agent] COMPLETED ✓")
     return state

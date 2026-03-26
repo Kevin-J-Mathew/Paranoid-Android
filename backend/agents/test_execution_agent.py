@@ -15,6 +15,11 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     generated_tests = state["generated_tests"]
     story_id = state["story_id"]
 
+    print(f"\n{'='*60}")
+    print(f"[Test Execution Agent] STARTED — {len(generated_tests)} tests to run")
+    print(f"[Test Execution Agent] Target: {config.TARGET_APP_URL}")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "Test Execution Agent",
         "status": "running",
@@ -26,11 +31,14 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 
     execution_results = []
 
-    for test in generated_tests:
+    for i, test in enumerate(generated_tests, 1):
         file_path = test.get("file_path")
         scenario_name = test["scenario_name"]
 
+        print(f"[Test Execution Agent] Running test {i}/{len(generated_tests)}: {scenario_name}")
+
         if not file_path or not os.path.exists(file_path):
+            print(f"[Test Execution Agent]   -> ERROR: File not found: {file_path}")
             execution_results.append({
                 "test_name": scenario_name,
                 "status": "error",
@@ -74,6 +82,10 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
                 error_lines = [l for l in lines if "FAILED" in l or "Error" in l or "assert" in l.lower()]
                 error_message = "\n".join(error_lines[:5]) if error_lines else stdout[-500:]
 
+            print(f"[Test Execution Agent]   -> {status.upper()} ({round(duration_ms)}ms)")
+            if error_message:
+                print(f"[Test Execution Agent]   -> Error: {error_message[:200]}")
+
             execution_results.append({
                 "test_name": scenario_name,
                 "status": status,
@@ -85,6 +97,7 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 
         except subprocess.TimeoutExpired:
             duration_ms = (time.time() - start_time) * 1000
+            print(f"[Test Execution Agent]   -> TIMEOUT after 60s")
             execution_results.append({
                 "test_name": scenario_name,
                 "status": "error",
@@ -109,6 +122,8 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     error_count = sum(1 for r in execution_results if r["status"] == "error")
     total = len(execution_results)
 
+    print(f"[Test Execution Agent] Results: {passed_count}/{total} passed, {failed_count} failed, {error_count} errors")
+
     state["execution_results"] = execution_results
     state["agent_steps"][-1]["status"] = "completed"
     state["agent_steps"][-1]["message"] = (
@@ -122,4 +137,5 @@ def run_test_execution_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         "errors": error_count,
         "pass_rate": round(passed_count / total * 100, 1) if total > 0 else 0
     }
+    print(f"[Test Execution Agent] COMPLETED ✓")
     return state

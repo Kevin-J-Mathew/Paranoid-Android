@@ -8,6 +8,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
+# Force line-buffered stdout so agent logs appear in real time (even from threads)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
@@ -116,6 +120,11 @@ async def _execute_run(run_id: str, initial_state: Dict[str, Any]):
     """Execute the LangGraph pipeline in a thread pool (sync agents)."""
     try:
         active_runs[run_id]["status"] = "running"
+        print(f"\n{'#'*60}")
+        print(f"### PIPELINE STARTED: Run {run_id}")
+        print(f"### Story: {initial_state.get('story_title', 'N/A')}")
+        print(f"{'#'*60}")
+
         graph = get_compiled_graph()
 
         loop = asyncio.get_event_loop()
@@ -132,6 +141,12 @@ async def _execute_run(run_id: str, initial_state: Dict[str, Any]):
         active_runs[run_id]["state"] = final_state
         active_runs[run_id]["status"] = "completed"
         active_runs[run_id]["completed"] = True
+
+        print(f"\n{'#'*60}")
+        print(f"### PIPELINE COMPLETED: Run {run_id}")
+        print(f"### Results: {passed}/{total} passed, {failed} failed")
+        print(f"### Report: {final_state.get('report_filename', 'N/A')}")
+        print(f"{'#'*60}\n")
 
         await save_run({
             "run_id": run_id,
@@ -155,7 +170,10 @@ async def _execute_run(run_id: str, initial_state: Dict[str, Any]):
             active_runs[run_id]["status"] = "failed"
             active_runs[run_id]["completed"] = True
             active_runs[run_id]["error"] = error_msg
-        print(f"[Run {run_id}] ERROR: {error_msg}")
+        print(f"\n{'!'*60}")
+        print(f"!!! PIPELINE FAILED: Run {run_id}")
+        print(f"!!! Error: {error_msg}")
+        print(f"{'!'*60}")
         import traceback
         traceback.print_exc()
 
@@ -310,3 +328,15 @@ async def submit_feedback(request: FeedbackRequest):
         "message": f"Test '{request.test_name}' marked as false_positive={request.is_false_positive}. "
                    f"Future runs will learn from this feedback."
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    print("Starting Sentinel-Agent API server (no auto-reload)...")
+    print("Restart manually with 'python main.py' after code changes.")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False,
+    )

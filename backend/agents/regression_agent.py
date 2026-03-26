@@ -34,6 +34,10 @@ def run_regression_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     story_id = state["story_id"]
     story_text = state["story_text"]
 
+    print(f"\n{'='*60}")
+    print(f"[Regression Agent] STARTED — Analyzing {len(execution_results)} test results")
+    print(f"{'='*60}")
+
     step = {
         "agent_name": "Regression Detection Agent",
         "status": "running",
@@ -77,6 +81,7 @@ def run_regression_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         f"{list(false_positive_tests)}" if false_positive_tests else ""
     )
 
+    print(f"[Regression Agent] Calling Groq LLM for regression analysis...")
     llm = get_llm(temperature=0.0)
     messages = [
         SystemMessage(content=REGRESSION_SYSTEM_PROMPT),
@@ -141,4 +146,6 @@ Return only the JSON object.""")
         f"{regression_analysis.get('regression_summary', '')}"
     )
     state["agent_steps"][-1]["data"] = regression_analysis
+    print(f"[Regression Agent] Risk: {risk.upper()}")
+    print(f"[Regression Agent] COMPLETED ✓")
     return state
