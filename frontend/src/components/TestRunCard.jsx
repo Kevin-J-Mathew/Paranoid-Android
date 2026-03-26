@@ -78,25 +78,39 @@ export default function TestRunCard({ result, onViewReport, onFeedback }) {
 
       {/* Test results list */}
       {result.execution_results && result.execution_results.length > 0 && (
-        <div className="space-y-1 mb-4 max-h-32 overflow-y-auto">
+        <div className="space-y-3 mb-4 max-h-96 overflow-y-auto pr-1">
           {result.execution_results.map((r, idx) => (
-            <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-slate-700 last:border-0">
-              <span className="text-slate-400 truncate flex-1 mr-2">{r.test_name}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500">{r.duration_ms}ms</span>
-                <span className={`font-bold uppercase ${STATUS_COLORS[r.status] || 'text-slate-400'}`}>
-                  {r.status}
-                </span>
-                {onFeedback && r.status === 'failed' && (
-                  <button
-                    onClick={() => onFeedback(r.test_name)}
-                    className="text-slate-500 hover:text-yellow-400 transition-colors"
-                    title="Mark as false positive"
-                  >
-                    🚩
-                  </button>
-                )}
+            <div key={idx} className="flex flex-col text-xs pb-3 border-b border-slate-700 last:border-0 last:pb-0">
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-slate-400 truncate flex-1 mr-2">{r.test_name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">{r.duration_ms}ms</span>
+                  <span className={`font-bold uppercase ${STATUS_COLORS[r.status] || 'text-slate-400'}`}>
+                    {r.status}
+                  </span>
+                  {onFeedback && r.status === 'failed' && (
+                    <button
+                      onClick={() => onFeedback(r.test_name)}
+                      className="text-slate-500 hover:text-yellow-400 transition-colors"
+                      title="Mark as false positive"
+                    >
+                      🚩
+                    </button>
+                  )}
+                </div>
               </div>
+              
+              {r.video_url && (
+                <div className="w-full mt-2">
+                  <video
+                    controls
+                    className="w-full rounded-lg border border-slate-700 bg-black"
+                    style={{ maxHeight: '200px', objectFit: 'contain' }}
+                  >
+                    <source src={`http://localhost:8000${r.video_url}`} type="video/webm" />
+                  </video>
+                </div>
+              )}
             </div>
           ))}
         </div>

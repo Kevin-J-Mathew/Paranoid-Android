@@ -31,14 +31,19 @@ os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 def test_SCENARIO_NAME():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        browser = p.chromium.launch(headless=False, slow_mo=600)
+        context = browser.new_context(
+            record_video_dir=SCREENSHOTS_DIR,
+            record_video_size={"width": 1280, "height": 720}
+        )
+        page = context.new_page()
         try:
             page.goto(TARGET_URL)
             # ... test steps ...
             screenshot_path = os.path.join(SCREENSHOTS_DIR, "SCENARIO_NAME.png")
             page.screenshot(path=screenshot_path)
         finally:
+            context.close()
             browser.close()
 ```
 
@@ -56,7 +61,11 @@ CRITICAL PLAYWRIGHT RULES:
 1. When the list is empty (0 items), the `.todo-count`, `.filters`, and `.clear-completed` elements DO NOT EXIST in the DOM. Do NOT try to read their text before adding an item, or Playwright will timeout and fail!
 2. Use `.text_content()` instead of `.text` to read text.
 3. Use `expect(locator).to_have_text(...)` or `expect(locator).to_be_visible()` instead of loose assertions.
-4. Don't use `assert` heavily, rely on `expect()`."""
+4. Don't use `assert` heavily, rely on `expect()`.
+5. DO NOT hallucinate Jest matchers like `expect.stringContaining()`. Use Playwright assertion `expect(locator).to_contain_text("foo")`.
+6. When checking classes, do NOT use exact match `to_have_class("completed")` because of spaces. Use Regex: `expect(locator).to_have_class(re.compile(r'completed'))`. Do NOT put quotes around re.compile()!
+7. DO NOT use hallucinated methods like `to_be_in_frame()`. Filter elements use `expect(locator).to_have_class(re.compile(r'selected'))`.
+8. Check if a todo is done using `expect(checkbox_locator).to_be_checked()` instead of matching CSS styles."""
 
 
 def _message_content_to_text(content: Any) -> str:
@@ -181,6 +190,8 @@ Return ONLY the Python code, no markdown backticks, no explanation.""")
             headers = []
             if "import pytest" not in final_code:
                 headers.append("import pytest\nfrom playwright.sync_api import sync_playwright, expect\nimport os")
+            if "import re" not in final_code:
+                headers.append("import re")
             if "TARGET_URL =" not in final_code and "TARGET_URL=" not in final_code:
                 headers.append(f'\nTARGET_URL = "{config.TARGET_APP_URL}"\nSCREENSHOTS_DIR = os.path.join(os.path.dirname(__file__), "..", "screenshots")\nos.makedirs(SCREENSHOTS_DIR, exist_ok=True)')
             

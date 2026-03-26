@@ -60,6 +60,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount(
+    "/screenshots",
+    StaticFiles(directory=config.SCREENSHOTS_DIR),
+    name="screenshots"
+)
+
 
 @app.get("/api/health")
 async def health_check():

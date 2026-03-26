@@ -18,8 +18,10 @@ sentinel.db
 
 # Generated outputs
 backend/tests_output/*.py
+backend/screenshots/tests/*.webm
 backend/reports/*.html
 backend/screenshots/*.png
+backend/screenshots/*.webm
 backend/chroma_db/
 
 # Node
